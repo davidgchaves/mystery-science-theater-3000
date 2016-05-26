@@ -174,3 +174,43 @@ connection
   |> UserController.index
   |> UserView.render("index.html")
 ```
+
+### Maps vs Structs
+
+Elixir `structs` are built on top of `maps`:
+
+```elixir
+defmodule Rumbl.User do
+  defstruct [:id, :name, :username, :password]
+end
+```
+
+Elixir `maps` offer protection for bad keys only at runtime, when we effectively access the key:
+
+```console
+iex> user = %{usernmae: "jose", password: "elixir"}
+%{password: "elixir", usernmae: "jose"}
+
+iex> user.username
+** (KeyError) key :username not found in: %{password: "elixir", usernmae: "jose"}
+```
+
+Elixir `structs` offer protection for bad keys at compilation time:
+
+
+```console
+iex> chris = %User{nmae: "chris"}
+** (CompileError) iex:3: unknown key :nmae for struct User
+```
+
+A `struct` is a `map` that has a `__struct__` key:
+
+```console
+iex> jose = %User{name: "Jose Valim"}
+%User{id: nil, name: "Jose Valim", username: nil, password: nil}
+
+iex> jose.__struct__
+Rumbl.User
+```
+
+Elixir `structs` are Elixir's main abstraction for working with structured data.

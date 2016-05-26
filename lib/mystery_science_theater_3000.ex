@@ -10,7 +10,7 @@ defmodule MysteryScienceTheater_3000 do
       # Start the endpoint when the application starts
       supervisor(MysteryScienceTheater_3000.Endpoint, []),
       # Start the Ecto repository
-      supervisor(MysteryScienceTheater_3000.Repo, []),
+      #supervisor(MysteryScienceTheater_3000.Repo, []),
       # Here you could define other workers and supervisors as children
       # worker(MysteryScienceTheater_3000.Worker, [arg1, arg2, arg3]),
     ]
