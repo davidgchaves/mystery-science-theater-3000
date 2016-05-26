@@ -220,3 +220,42 @@ Elixir `structs` are Elixir's main abstraction for working with structured data.
 - Templates are web pages or fragments that allow both static markup and native code to build response pages, compiled into a function.
 - Views are modules containing rendering functions that convert data into a format the end user will consume, like HTML or JSON.
 - In Phoenix, you eventually compile both to functions.
+
+## 4. `Ecto` and Changesets
+
+### Understanding `Ecto`'s changesets
+
+`Ecto` has a feature called **changesets** that:
+
+- holds all changes you want to perform on the database.
+- encapsulates the whole process of receiving external data, casting and validating it before writing it to the database.
+
+### About Models
+
+In `Phoenix`, models, controllers, and views are layers of functions:
+
+- A **controller** is a layer to transform requests and responses according to a communication protocol.
+- A **model** is a group of functions to transform data according to our business requirements.
+
+We use the word:
+
+- **schema** to describe the native form of the data,
+- **struct** to refer to the data itself (but structs are not models).
+
+The important thing to understand is that the **model** is the layer of functions that supports our business rules rather than the data that flows through those functions.
+
+### Migrations
+
+`Phoenix` uses **migrations** to make the database reflect the structure of our application.
+
+Example:
+
+```console
+➜  mix ecto.gen.migration create_user
+Compiled web/models/user.ex
+Compiled web/views/user_view.ex
+* creating priv/repo/migrations
+* creating priv/repo/migrations/20160526172142_create_user.exs
+```
+
+In general, migrating a database, both up for a successful deploy and down for an unsuccessful deploy, should be an automated and repeatable process.
