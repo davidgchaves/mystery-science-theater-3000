@@ -214,3 +214,9 @@ Rumbl.User
 ```
 
 Elixir `structs` are Elixir's main abstraction for working with structured data.
+
+### Views vs Templates
+
+- Templates are web pages or fragments that allow both static markup and native code to build response pages, compiled into a function.
+- Views are modules containing rendering functions that convert data into a format the end user will consume, like HTML or JSON.
+- In Phoenix, you eventually compile both to functions.
