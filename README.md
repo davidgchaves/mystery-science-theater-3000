@@ -267,3 +267,6 @@ In general, migrating a database, both up for a successful deploy and down for a
 	- Write code to do the minimal required database operation to update a record.
 	- Check a particular change against a database constraint (such as a unique index).
 	- Enforce validations without hitting the database.
+
+
+## 5. Authenticating Users
