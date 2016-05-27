@@ -270,3 +270,75 @@ In general, migrating a database, both up for a successful deploy and down for a
 
 
 ## 5. Authenticating Users
+
+### Anatomy of a `Plug`
+
+There are two kinds of `plug`s (they work the same):
+
+- `function plugs`: single functions.
+- `module plugs`: modules that provides two functions with some configuration details.
+
+Both use the same request interface:
+
+- take a `conn` and optional `opts`,
+- return a `conn`.
+
+#### `Module Plugs`
+
+You specify a `module plug` by providing the module name:
+
+```elixir
+plug Plug.Logger
+```
+
+A `module plug`:
+
+- must have 2 functions:
+	- `init(opts)`.
+	- `call(conn, opts)`.
+- can simply (a `plug` that does nothing):
+	- return the given options on `init`.
+	- return the given connection on `call`.
+
+```elixir
+defmodule DoNothingPlug do
+  def init(opts),        do: opts
+  def call(conn, _opts), do: conn
+end
+```
+
+#### `init(opts)`
+
+`init` will happen at **compile time**, being a great place to:
+
+- validate `opts`,
+- prepare some of the work,
+- do some heavy lifting to transform `opts`.
+
+#### `call(conn, opts)`
+
+`call` will happen at **runtime**:
+
+- It's where the main work of a `module plug` happens.
+- We want it to do as little work as possible.
+
+#### Comunication between `init` and `call`
+
+`Plug` uses the result of `init` as the second argument to `call`, that way, `call` can be as fast as possible because `init` has already done the heavy lifting.
+
+#### `Function Plugs`
+
+You specify a `function plug` with the name of the function as an `atom`:
+
+```elixir
+plug :protect_from_forgery
+```
+
+#### More about `Plug.Conn`
+
+`conn` is only a `Plug.Conn` struct:
+
+- `conn` is the data we pass through every `plug`.
+- `conn` has the details for any `request`.
+- The `request` is morphed in tiny steps until we eventually send a `response`.
+- [Online documentation for Plug.Conn](https://hexdocs.pm/plug/Plug.Conn.html)

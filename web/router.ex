@@ -7,6 +7,7 @@ defmodule MysteryScienceTheater_3000.Router do
     plug :fetch_flash
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug MysteryScienceTheater_3000.Auth, repo: MysteryScienceTheater_3000.Repo
   end
 
   pipeline :api do
