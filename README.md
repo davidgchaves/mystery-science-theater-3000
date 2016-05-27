@@ -259,3 +259,11 @@ Compiled web/views/user_view.ex
 ```
 
 In general, migrating a database, both up for a successful deploy and down for an unsuccessful deploy, should be an automated and repeatable process.
+
+### More about `Ecto`'s changesets
+
+- `Ecto` is using **changesets** as a bucket to hold everything related to a database change, before and after persistence.
+- You can use the information contained inside a **changeset** to do more than see what changed, like:
+	- Write code to do the minimal required database operation to update a record.
+	- Check a particular change against a database constraint (such as a unique index).
+	- Enforce validations without hitting the database.
