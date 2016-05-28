@@ -23,6 +23,12 @@ defmodule MysteryScienceTheater_3000.Router do
     resources "/sessions", SessionController, only: [:new, :create, :delete]
   end
 
+  scope "/manage", MysteryScienceTheater_3000 do
+    pipe_through [:browser, :authenticate_user]
+
+    resources "/videos", VideoController
+  end
+
   # Other scopes may use custom stacks.
   # scope "/api", MysteryScienceTheater_3000 do
   #   pipe_through :api

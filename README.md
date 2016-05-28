@@ -342,3 +342,27 @@ plug :protect_from_forgery
 - `conn` has the details for any `request`.
 - The `request` is morphed in tiny steps until we eventually send a `response`.
 - [Online documentation for Plug.Conn](https://hexdocs.pm/plug/Plug.Conn.html)
+
+
+## 6. Generators
+
+### Generating `resources`
+
+`Phoenix` includes two `Mix` tasks to bootstrap applications:
+
+- `phoenix.gen.html` creates a simple HTTP scaffold with HTML pages,
+- `phoenix.gen.json` creates a simple REST-based API using JSON.
+
+You get **migrations**, **controllers**, and **templates** for basic CRUD operations of a `resource`, as well as **tests** so you can hit the ground running.
+
+#### `phoenix.gen.html`
+
+```console
+➜  mix phoenix.gen.html Video videos user_id:references:users url:string title:string description:text
+```
+
+Following the `mix phoenix.gen.html` command, we have:
+
+- `Video`, the name of the module that defines the model,
+- `videos`, the plural form of the model name,
+- `user_id:references:users url:string title:string description:text`, each field, with some type information.

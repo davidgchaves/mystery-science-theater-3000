@@ -36,6 +36,7 @@ defmodule MysteryScienceTheater_3000.Web do
 
       import MysteryScienceTheater_3000.Router.Helpers
       import MysteryScienceTheater_3000.Gettext
+      import MysteryScienceTheater_3000.Auth, only: [authenticate_user: 2]
     end
   end
 
@@ -58,6 +59,8 @@ defmodule MysteryScienceTheater_3000.Web do
   def router do
     quote do
       use Phoenix.Router
+
+      import MysteryScienceTheater_3000.Auth, only: [authenticate_user: 2]
     end
   end
 
