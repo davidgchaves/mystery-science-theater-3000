@@ -1,5 +1,6 @@
 defmodule MysteryScienceTheater_3000.UserController do
   use MysteryScienceTheater_3000.Web, :controller
+  alias MysteryScienceTheater_3000.Auth
   alias MysteryScienceTheater_3000.User
 
   plug :authenticate when action in [:index, :show]
@@ -24,6 +25,7 @@ defmodule MysteryScienceTheater_3000.UserController do
     case Repo.insert(changeset) do
       {:ok, user} ->
         conn
+        |> Auth.login(user)
         |> put_flash(:info, "#{user.name} created!")
         |> redirect(to: user_path(conn, :index))
       {:error, changeset} ->
