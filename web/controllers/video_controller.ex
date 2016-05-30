@@ -1,9 +1,11 @@
 defmodule MysteryScienceTheater_3000.VideoController do
   use MysteryScienceTheater_3000.Web, :controller
 
+  alias MysteryScienceTheater_3000.Category
   alias MysteryScienceTheater_3000.Video
 
   plug :scrub_params, "video" when action in [:create, :update]
+  plug :load_categories       when action in [:new, :create, :edit, :update]
 
   def action(conn, _) do
     apply(__MODULE__, action_name(conn), [conn, conn.params, conn.assigns.current_user])
@@ -78,5 +80,15 @@ defmodule MysteryScienceTheater_3000.VideoController do
 
   defp user_videos(user) do
     assoc(user, :videos)
+  end
+
+  defp load_categories(conn, _) do
+    query =
+      Category
+      |> Category.alphabetical_order
+      |> Category.select_names_and_ids
+    categories = Repo.all query
+
+    assign conn, :categories, categories
   end
 end

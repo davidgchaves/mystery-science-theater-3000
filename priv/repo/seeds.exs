@@ -9,3 +9,9 @@
 #
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
+alias MysteryScienceTheater_3000.Category
+alias MysteryScienceTheater_3000.Repo
+
+for category <- ~w(Action Arthouse Comedy Drama Romance Sci-fi) do
+    Repo.get_by(Category, name: category) || Repo.insert!(%Category{name: category})
+end

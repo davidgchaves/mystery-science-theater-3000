@@ -1,19 +1,14 @@
-defmodule MysteryScienceTheater_3000.Video do
+defmodule MysteryScienceTheater_3000.Category do
   use MysteryScienceTheater_3000.Web, :model
 
-  schema "videos" do
-    field :url, :string
-    field :title, :string
-    field :description, :string
-
-    belongs_to :user, MysteryScienceTheater_3000.User
-    belongs_to :category, MysteryScienceTheater_3000.Category
+  schema "categories" do
+    field :name, :string
 
     timestamps
   end
 
-  @required_fields ~w(url title description)
-  @optional_fields ~w(category_id)
+  @required_fields ~w(name)
+  @optional_fields ~w()
 
   @doc """
   Creates a changeset based on the `model` and `params`.
@@ -24,5 +19,15 @@ defmodule MysteryScienceTheater_3000.Video do
   def changeset(model, params \\ :empty) do
     model
     |> cast(params, @required_fields, @optional_fields)
+  end
+
+  def alphabetical_order(query) do
+    from c in query,
+    order_by: c.name
+  end
+
+  def select_names_and_ids(query) do
+    from c in query,
+    select: {c.name, c.id}
   end
 end

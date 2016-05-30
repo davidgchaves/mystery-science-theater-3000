@@ -366,3 +366,82 @@ Following the `mix phoenix.gen.html` command, we have:
 - `Video`, the name of the module that defines the model,
 - `videos`, the plural form of the model name,
 - `user_id:references:users url:string title:string description:text`, each field, with some type information.
+
+
+## 7. `Ecto` Queries and Constraints
+
+Instead of treating the database as pure dumb storage, `Ecto` uses the strengths of the database to help keep the data consistent.
+
+### Convention for seeding data
+
+`Phoenix` defines a convention for seeding data. Check the `Phoenix` generated comments at `priv/repo/seeds.exs`.
+
+### Composable `Ecto` Queries
+
+`Ecto` queries are composable, which means you can define the query bit by bit:
+
+```console
+➜  iex -S mix
+
+iex(1)> import Ecto.Query
+nil
+iex(2)> alias MysteryScienceTheater_3000.Repo
+nil
+iex(3)> alias MysteryScienceTheater_3000.Category
+nil
+
+iex(4)> query = Category
+MysteryScienceTheater_3000.Category
+iex(5)> query = from c in query, order_by: c.name
+#Ecto.Query<from c in MysteryScienceTheater_3000.Category,
+ order_by: [asc: c.name]>
+iex(6)> query = from c in query, select: {c.name, c.id}
+#Ecto.Query<from c in MysteryScienceTheater_3000.Category,
+ order_by: [asc: c.name], select: {c.name, c.id}>
+
+iex(7)> Repo.all query
+[debug] SELECT c0."name", c0."id" FROM "categories" AS c0 ORDER BY c0."name" [] OK query=89.4ms queue=28.2ms
+[{"Action", 1}, {"Arthouse", 2}, {"Comedy", 3}, {"Drama", 4}, {"Romance", 5},
+ {"Sci-fi", 6}]
+```
+
+instead of building the whole query at once:
+
+```console
+➜  iex -S mix
+
+iex(1)> import Ecto.Query
+nil
+iex(2)> alias MysteryScienceTheater_3000.Repo
+nil
+iex(3)> alias MysteryScienceTheater_3000.Category
+nil
+
+iex(4)> query = from c in Category,
+...(4)>         order_by: c.name,
+...(4)>         select: {c.name, c.id}
+#Ecto.Query<from c in MysteryScienceTheater_3000.Category,
+ order_by: [asc: c.name], select: {c.name, c.id}>
+
+iex(5)> Repo.all query
+[debug] SELECT c0."name", c0."id" FROM "categories" AS c0 ORDER BY c0."name" [] OK query=159.6ms queue=28.7ms
+[{"Action", 1}, {"Arthouse", 2}, {"Comedy", 3}, {"Drama", 4}, {"Romance", 5},
+ {"Sci-fi", 6}]
+```
+
+This strategy works because:
+
+- `Ecto` defines the `queryable` protocol.
+- `from` receives a `queryable`, and you can use any `queryable` as a base for a new query.
+- `queryable` is an `Elixir` protocol.
+- Protocols like `Enumerable` (for Enum) define APIs for specific language features.
+
+Because both `Category` and `query` implement the  `Ecto.Queryable` protocol, we can call `Repo.all` either as:
+
+- `Repo.all(Category)`
+- `Repo.all(query)`
+
+By abiding by the protocol, you can quickly layer together sophisticated queries with `Ecto.Query`:
+
+- maintaining clear boundaries between your layers,
+- adding sophistication without complexity.
