@@ -445,3 +445,234 @@ By abiding by the protocol, you can quickly layer together sophisticated queries
 
 - maintaining clear boundaries between your layers,
 - adding sophistication without complexity.
+
+### The `^` (`pin`) operator in `Ecto` Queries
+
+The `^` operator interpolates values into our queries where `Ecto` can scrub them and safely put them to use, without the risk of SQL injection:
+
+```console
+iex(4)> username = "andreitarkovsky"
+iex(4)> query = from u in User,
+...(4)>         where: u.username == ^username
+#Ecto.Query<from u in MysteryScienceTheater_3000.User,
+ where: u.username == ^"andreitarkovsky">
+iex(5)> Repo.one query
+```
+
+If you forget the `^` operator, the `Elixir` compiler will yell at you:
+
+```console
+iex(6)> query = from u in User,
+...(6)>         where: u.username == username
+** (Ecto.Query.CompileError) variable `username` is not a valid query expression. Variables need to be explicitly interpolated in queries with ^
+    (ecto) expanding macro: Ecto.Query.where/3
+           iex:13: (file)
+    (ecto) expanding macro: Ecto.Query.from/2
+           iex:13: (file)
+```
+
+### Differences between traditional vs `Phoenix` MVC (from the perspective of controllers)
+
+We’d like to:
+
+- keep **impure** functions in the **controller**,
+- keep **pure** functions in the **model** and **view** layers.
+
+Since `Ecto` splits the responsibilities between:
+
+- the repository,
+- its data API,
+
+it fits our world view perfectly:
+
+1. When a **request** comes in, the **controller** is invoked.
+2. The **controller** might read data from the socket (**an IO side effect**) and parse it into data structures (like the `params` map).
+3. When we have the parsed data (like the `params` map), we send it to the **model**, which transforms those parameters into `Ecto changesets` or `Ecto queries`.
+4. `Elixir structs`, `Ecto changesets`, and `Ecto queries` are just data, we can build or transform (**no side effects**) any of them by passing them from function to function, slightly modifying the data on each step.
+5. When we've molded the data to the shape of our business-model requirements, we invoke the entities that can change the world around us (**side effects**, again), like:
+	- the repository (`Repo`),
+	- the system responsible for delivering emails (`Mail`).
+6. Finally, we can invoke the **view**.
+7. The **view** converts
+	- the **model data**, such as:
+		- `Ecto changesets`,
+		- `Elixir structs`,
+	- into **view data**, such as:
+		- `JSON maps`
+		- `HTML strings`...
+8. ...which is then written to the socket via the **controller** (**a side effect**).
+9. Because the **controller** already encapsulates **IO side effects** (by reading and writing to the socket), it's the perfect place to put interactions with the repository, while the **model** and **view** layers are kept **pure**.
+
+The same strategy that improves the manageability of our code will also make our code easier to test.
+
+### Writing `Ecto` Queries
+
+The query syntax you choose depends on your taste and the problems you're trying to solve:
+
+- with `Keywords`: probably more convenient for pulling together ad-hoc queries and solving one-off problems.
+- with `|>`s: probably better for building an application’s unique complex layered query API.
+
+Each approach has its advantages.
+
+### Writing `Ecto` Queries with `Keywords` Syntax
+
+Expresses different parts of the query by using a `keyword` list (key-value pairs):
+
+```console
+➜  iex -S mix
+
+iex(1)> import Ecto.Query
+iex(2)> alias MysteryScienceTheater_3000.Repo
+iex(3)> alias MysteryScienceTheater_3000.User
+
+iex(4)> users_count = from u in User,
+...(4)>               select: count(u.id)
+#Ecto.Query<from u in MysteryScienceTheater_3000.User, select: count(u.id)>
+
+iex(5)> ingmar_users_count = from u in users_count,
+...(5)>                      where: ilike(u.username, ^"ingmar%")
+#Ecto.Query<from u in MysteryScienceTheater_3000.User,
+ where: ilike(u.username, ^"ingmar%"), select: count(u.id)>
+
+iex(6)> Repo.one users_count
+[debug] SELECT count(u0."id") FROM "users" AS u0 [] OK query=0.6ms
+10
+
+iex(7)> Repo.one ingmar_users_count
+[debug] SELECT count(u0."id") FROM "users" AS u0 WHERE (u0."username" ILIKE $1) ["ingmar%"] OK query=0.7ms
+1
+```
+
+### Writing `Ecto` Queries with `|>`s
+
+Expresses different parts of the query with the `|>` operator:
+
+```console
+➜  iex -S mix
+
+iex(1)> import Ecto.Query
+iex(2)> alias MysteryScienceTheater_3000.Repo
+iex(3)> alias MysteryScienceTheater_3000.User
+
+iex(4)> User |>
+...(4)>   select([u], count(u.id)) |>
+...(4)>   where([u], ilike(u.username, ^"ingmar%")) |>
+...(4)>   Repo.one()
+[debug] SELECT count(u0."id") FROM "users" AS u0 WHERE (u0."username" ILIKE $1) ["ingmar%"] OK query=1.5ms
+1
+```
+
+### Writing `Ecto` Query `Framents`
+
+A programming truism is that the best abstractions offer an escape hatch, one that exposes the user to one deeper level of abstraction on demand.
+
+`Ecto` has such a feature, called the `query fragment`.
+
+A `query fragment` sends part of a query directly to the database but allows you to construct the query string in a safe way:
+
+```console
+➜  iex -S mix
+
+iex(1)> import Ecto.Query
+iex(2)> alias MysteryScienceTheater_3000.Repo
+iex(3)> alias MysteryScienceTheater_3000.User
+
+iex(4)> ingmar_bergman = "IngmarBergman"
+
+iex(5)> ingmar_bergman_query =
+...(5)>   from u in User,
+...(5)>   where: fragment("lower(username) = ?", ^String.downcase(ingmar_bergman))
+#Ecto.Query<from u in MysteryScienceTheater_3000.User,
+ where: fragment("lower(username) = ?", ^"ingmarbergman")>
+
+iex(6)> ingmar_bergman_count_query =
+...(6)>   from u in ingmar_bergman_query,
+...(6)>   select: count(u.id)
+#Ecto.Query<from u in MysteryScienceTheater_3000.User,
+ where: fragment("lower(username) = ?", ^"ingmarbergman"), select: count(u.id)>
+
+iex(7)> Repo.one ingmar_bergman_count_query
+[debug] SELECT count(u0."id") FROM "users" AS u0 WHERE (lower(username) = $1) ["ingmarbergman"] OK query=113.8ms queue=30.5ms
+1
+```
+
+Whether the interpolated values are `Ecto` query expressions or Postgres SQL fragments, `Ecto` safely escapes all interpolated values.
+
+### `Ecto.Adapters.SQL.query`
+
+When everything else fails and even `fragments` aren’t enough, you can always run direct SQL with `Ecto.Adapters.SQL.query`.
+
+```console
+➜  iex -S mix
+
+iex(1)> alias MysteryScienceTheater_3000.Repo
+
+iex(2)> Ecto.Adapters.SQL.query(
+...(2)>   Repo,
+...(2)>   "SELECT power($1, $2)",
+...(2)>   [2, 10]
+...(2)> )
+[debug] SELECT power($1, $2) [2, 10] OK query=2.7ms
+{:ok,
+ %{columns: ["power"], command: :select, connection_id: 81445, num_rows: 1,
+   rows: [[1024.0]]}}
+```
+
+It's best to stick to `Ecto` query expressions wherever possible, but you have a safe escape hatch when you need it.
+
+### Querying Relationships
+
+Very basic example:
+
+```console
+➜  iex -S mix
+
+iex(1)> import Ecto.Query
+iex(2)> alias MysteryScienceTheater_3000.Repo
+iex(3)> alias MysteryScienceTheater_3000.User
+
+iex(4)> query = from u in User,
+...(4)>         limit: 1,
+...(4)>         preload: [:videos]
+#Ecto.Query<from u in MysteryScienceTheater_3000.User, limit: 1,
+ preload: [:videos]>
+
+iex(5)> user_with_videos = Repo.one query
+[debug] SELECT u0."id", u0."name", u0."username", u0."password_hash", u0."inserted_at", u0."updated_at" FROM "users" AS u0 LIMIT 1 [] OK query=1.0ms
+[debug] SELECT v0."id", v0."url", v0."title", v0."description", v0."user_id", v0."category_id", v0."inserted_at", v0."updated_at" FROM "videos" AS v0 WHERE (v0."user_id" IN ($1)) ORDER BY v0."user_id" [1] OK query=0.9ms queue=0.1ms
+
+iex(6)> user_with_videos.videos
+[%MysteryScienceTheater_3000.Video{
+  ...,
+  description: "Just an example video for andrei",
+  id: 2,
+  user_id: 1}]
+```
+
+More elaborated example:
+
+```console
+➜  iex -S mix
+
+iex(1)> import Ecto.Query
+iex(2)> alias MysteryScienceTheater_3000.Repo
+iex(3)> alias MysteryScienceTheater_3000.User
+
+iex(4)> Repo.all from u in User,
+...(4)>          join: v in assoc(u, :videos),
+...(4)>          join: c in assoc(v, :category),
+...(4)>          where: c.name == "Arthouse",
+...(4)>          select: {u, v}
+[debug] SELECT u0."id", u0."name", u0."username", u0."password_hash", u0."inserted_at", u0."updated_at", v1."id", v1."url", v1."title", v1."description", v1."user_id", v1."category_id", v1."inserted_at", v1."updated_at" FROM "users" AS u0 INNER JOIN "videos" AS v1 ON v1."user_id" = u0."id" INNER JOIN "categories" AS c2 ON c2."id" = v1."category_id" WHERE (c2."name" = 'Arthouse') [] OK query=1.4ms
+[{%MysteryScienceTheater_3000.User{
+     ...,
+     username: "andreitarkovsky"},
+  %MysteryScienceTheater_3000.Video{
+     ...,
+     category_id: 2,
+     description: "This time with `Arthouse` Category",
+     id: 3,
+     title: "Second example video",
+     user_id: 1}
+}]
+```
