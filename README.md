@@ -676,3 +676,22 @@ iex(4)> Repo.all from u in User,
      user_id: 1}
 }]
 ```
+
+### `Constraints` and `Ecto` terminology
+
+`Constraints` allow us to use underlying relational database features to help us maintain database integrity.
+
+- `constraint`: explicit database constraint (uniqueness constraint on an index, or an integrity constraint between primary and foreign keys).
+- `constraint error`: The `Ecto.ConstraintError`, (like when we tried to add a category twice).
+- `changeset constraint`: A `constraint annotation` added to the `changeset` that allows `Ecto` to convert `constraint errors` into `changeset error messages`.
+- `changeset error messages`: Beautiful error messages for the consumption of humans.
+
+### Data consistency across records
+
+Ensuring data is consistent across records is a critical job that all database-backed applications need to handle.
+
+You have **three approaches** to solving this problem:
+
+1. Let the application (and the web framework) manage relationships for you (`Rails ActiveRecord`).
+2. Let the database manage all code that touches data (through the use of layers such as stored procedures).
+3. Let the application layer (and web server) use database services (hybrid approach) like referential integrity and transactions to strike a balance between the needs of the application layer and the needs of the database (`Ecto` managing `constraints`).
