@@ -695,3 +695,39 @@ You have **three approaches** to solving this problem:
 1. Let the application (and the web framework) manage relationships for you (`Rails ActiveRecord`).
 2. Let the database manage all code that touches data (through the use of layers such as stored procedures).
 3. Let the application layer (and web server) use database services (hybrid approach) like referential integrity and transactions to strike a balance between the needs of the application layer and the needs of the database (`Ecto` managing `constraints`).
+
+### `*_constraint` `changeset` functions examples
+
+The `*_constraint` `changeset` functions are useful when the constraint being mapped is triggered by external data, often as part of the user request.
+
+Using `changeset constraints` only makes sense if the error message can be something the user can take action on.
+
+#### `unique_constraint`
+
+The `unique_constraint` converts unique constraint errors into human-readable error messages.
+
+`user_changeset |> unique_constraint(​:username​)` guarantees that you can't create a new user if the new username already exists in the database.
+
+#### `assoc_constraint`
+
+The `assoc_constraint` converts foreign-key constraint errors into human-readable error messages.
+
+`video_changeset |> assoc_constraint(​:category​)` guarantees that a video is created only if the category exists in the database.
+
+### `IEx` `v(n)` trick
+
+`IEx` allows us to fetch a previous value by using `v(n)`:
+
+- `n` is the number of the expression.
+- Pass a negative value to grab the last `nth` expression.
+
+```console
+iex(11)> Repo.update changeset
+{:error, %Ecto.Changeset{ ... }
+
+iex(12)> {:error, changeset} = v(-1)
+{:error, %Ecto.Changeset{ ... }
+
+iex(13)> changeset.errors
+[category: "does not exist"]
+```
